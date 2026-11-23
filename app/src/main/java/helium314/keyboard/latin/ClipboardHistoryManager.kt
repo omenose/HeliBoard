@@ -148,11 +148,11 @@ class ClipboardHistoryManager(
         removeClipboardSuggestion()
     }
 
-    fun canRemove(index: Int) = clipboardDao?.isPinned(index) == false
+    fun canRemove(index: Int) = visibleEntries().getOrNull(index)?.isPinned == false
 
     fun removeEntry(index: Int) {
         if (canRemove(index))
-            clipboardDao?.deleteClipAt(index)
+            visibleEntries().getOrNull(index)?.let { clipboardDao?.deleteClip(it.id, false) }
     }
 
     fun sortHistoryEntries() {
@@ -163,9 +163,21 @@ class ClipboardHistoryManager(
     // when history is about to be shown
     fun prepareClipboardHistory() = clipboardDao?.clearOldClips(true)
 
-    fun getHistorySize() = clipboardDao?.count() ?: 0
+    fun getHistorySize() = visibleEntries().size
 
-    fun getHistoryEntry(position: Int) = clipboardDao?.getAt(position)
+    /** false = tab Temporary (belum disematkan), true = tab Permanent (disematkan) */
+    var showPinned = false
+
+    fun visibleEntries(): List<ClipboardHistoryEntry> =
+        clipboardDao?.getAll()?.filter { it.isPinned == showPinned } ?: emptyList()
+
+    fun countEntries(pinned: Boolean) = clipboardDao?.getAll()?.count { it.isPinned == pinned } ?: 0
+
+    fun deleteEntryById(id: Long) {
+        clipboardDao?.deleteClip(id, true)
+    }
+
+    fun getHistoryEntry(position: Int) = visibleEntries().getOrNull(position)
 
     fun getHistoryEntryContent(id: Long) = clipboardDao?.get(id)
 

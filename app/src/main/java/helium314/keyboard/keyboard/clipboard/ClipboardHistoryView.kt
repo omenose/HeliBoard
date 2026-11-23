@@ -57,6 +57,12 @@ class ClipboardHistoryView @JvmOverloads constructor(
     private val toolbarKeys = mutableListOf<ImageButton>()
     private lateinit var clipboardAdapter: ClipboardAdapter
 
+    private val clipboardTabs = ClipboardTabs()
+
+    private fun refreshTabs() {
+        if (this::clipboardHistoryManager.isInitialized) clipboardTabs.update(clipboardHistoryManager)
+    }
+
     lateinit var keyboardActionListener: KeyboardActionListener
     private lateinit var clipboardHistoryManager: ClipboardHistoryManager
 
@@ -99,6 +105,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
             placeholderView = this@ClipboardHistoryView.placeholderView
         }
         val clipboardStrip = KeyboardSwitcher.getInstance().clipboardStrip!!
+        clipboardTabs.attach(clipboardStrip) { pinned -> clipboardHistoryManager.showPinned = pinned; clipboardAdapter.notifyDataSetChanged(); refreshTabs() }
         getEnabledClipboardToolbarKeys(context.prefs()).forEach {
             val key = createToolbarKey(context, it)
             clipboardStrip.addView(key)
@@ -151,6 +158,7 @@ class ClipboardHistoryView @JvmOverloads constructor(
         historyManager.prepareClipboardHistory()
         historyManager.setHistoryChangeListener(this)
         clipboardAdapter.clipboardHistoryManager = historyManager
+        refreshTabs()
 
         val params = KeyDrawParams()
         params.updateParams(clipboardLayoutParams.bottomRowKeyboardHeight, keyVisualAttr)
@@ -227,18 +235,15 @@ class ClipboardHistoryView @JvmOverloads constructor(
     }
 
     override fun onClipInserted(position: Int) {
-        clipboardAdapter.notifyItemInserted(position)
-        clipboardRecyclerView.smoothScrollToPosition(position)
+        clipboardAdapter.notifyDataSetChanged(); refreshTabs()
     }
 
     override fun onClipsRemoved(position: Int, count: Int) {
-        clipboardAdapter.notifyItemRangeRemoved(position, count)
+        clipboardAdapter.notifyDataSetChanged(); refreshTabs()
     }
 
     override fun onClipMoved(oldPosition: Int, newPosition: Int) {
-        clipboardAdapter.notifyItemMoved(oldPosition, newPosition)
-        clipboardAdapter.notifyItemChanged(newPosition)
-        if (newPosition < oldPosition) clipboardRecyclerView.smoothScrollToPosition(newPosition)
+        clipboardAdapter.notifyDataSetChanged(); refreshTabs()
     }
 
     override fun onSharedPreferenceChanged(prefs: SharedPreferences?, key: String?) {

@@ -131,6 +131,7 @@ class ClipboardDao private constructor(private val db: Database) {
         if (filename != null && context != null)
             deleteIfSizeExceeded(context.prefs())
         cache.add(entry)
+        trimTemporary()
         cache.sort()
         listener?.onClipInserted(cache.indexOf(entry))
     }
@@ -154,6 +155,32 @@ class ClipboardDao private constructor(private val db: Database) {
     fun getAll(): List<ClipboardHistoryEntry> = cache
 
     fun count() = cache.size
+
+    /** Hapus satu klip berdasarkan id. notify=true memberi tahu tampilan agar memuat ulang. */
+    fun deleteClip(id: Long, notify: Boolean) {
+        synchronized(this) {
+            val entry = cache.firstOrNull { it.id == id } ?: return@synchronized
+            val index = cache.indexOf(entry)
+            delete(listOf(entry))
+            if (notify) listener?.onClipsRemoved(index, 1)
+        }
+    }
+
+    /** Ganti teks sebuah klip (status pin dan waktu dipertahankan). false jika kosong atau sudah ada. */
+    fun replaceText(id: Long, newText: String): Boolean = synchronized(this) {
+        val entry = cache.firstOrNull { it.id == id } ?: return@synchronized false
+        if (entry.filename != null || newText.isBlank()) return@synchronized false
+        if (cache.any { it.id != id && it.text == newText }) return@synchronized false
+        delete(listOf(entry))
+        insertNewEntry(entry.timeStamp, entry.isPinned, newText, null, null, null)
+        true
+    }
+
+    /** Batasi klip yang belum disematkan (Temporary) sampai MAX_TEMP; yang paling lama dibuang. */
+    private fun trimTemporary() {
+        val extra = cache.filter { !it.isPinned }.sortedByDescending { it.timeStamp }.drop(MAX_TEMP)
+        if (extra.isNotEmpty()) delete(extra)
+    }
 
     fun sort() = cache.sort()
 
@@ -247,6 +274,7 @@ class ClipboardDao private constructor(private val db: Database) {
 
     companion object {
         private const val TAG = "ClipboardDao"
+        const val MAX_TEMP = 20
 
         private const val TABLE = "CLIPBOARD"
         // it's possible timestamp is not unique, so we use a separate ID

@@ -41,6 +41,37 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="4"/>
+        <LinearLayout
+            android:id="@+id/clipboard_entry_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/clipboard_action_keep"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:gravity="center"
+                android:padding="8dp"/>
+            <TextView
+                android:id="@+id/clipboard_action_edit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:gravity="center"
+                android:padding="8dp"/>
+            <TextView
+                android:id="@+id/clipboard_action_delete"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="8dp"/>
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>
